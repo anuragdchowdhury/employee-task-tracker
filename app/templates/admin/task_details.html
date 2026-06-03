@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Task Details – Task Tracker{% endblock %}
+{% block page_title %}Task Details{% endblock %}
+
+{% block sidebar %}
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <i class="bi bi-clipboard2-check me-2"></i>
+        <span>Task Tracker</span>
+    </div>
+    <nav class="sidebar-nav">
+        <a href="/admin/dashboard" class="sidebar-link">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="/admin/employees" class="sidebar-link">
+            <i class="bi bi-people"></i>
+            <span>Employees</span>
+        </a>
+        <div class="sidebar-divider"></div>
+        <a href="/logout" class="sidebar-link text-danger">
+            <i class="bi bi-box-arrow-left"></i>
+            <span>Logout</span>
+        </a>
+    </nav>
+</aside>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <button onclick="history.back()" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back
+    </button>
+</div>
+
+<!-- Submission Info -->
+<div class="welcome-banner mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-6">
+            <h4 class="fw-bold mb-1">
+                <i class="bi bi-person me-2"></i>{{ submission.employee_name }}
+            </h4>
+            <p class="text-muted mb-0">
+                Week: {{ week_start }} – {{ week_end }}
+            </p>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">
+                <i class="bi bi-calendar-check me-1"></i>Submitted: {{ submitted_at }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Task Table -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>Tasks</h5>
+        <span class="badge bg-primary rounded-pill">{{ formatted_tasks | length }} tasks</span>
+    </div>
+    <div class="content-card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th width="50">#</th>
+                        <th>Task Name</th>
+                        <th>Description</th>
+                        <th width="160">Completion Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in formatted_tasks %}
+                    <tr>
+                        <td><span class="badge bg-primary rounded-pill">{{ loop.index }}</span></td>
+                        <td class="fw-medium">{{ task.task_name }}</td>
+                        <td class="text-muted">{{ task.task_description or 'N/A' }}</td>
+                        <td>
+                            <span class="badge bg-light text-dark">
+                                <i class="bi bi-calendar3 me-1"></i>{{ task.completion_date_fmt }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

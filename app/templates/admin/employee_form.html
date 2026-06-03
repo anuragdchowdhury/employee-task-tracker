@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}{% if mode == 'create' %}New Employee{% else %}Edit Employee{% endif %} – Task Tracker{% endblock %}
+{% block page_title %}{% if mode == 'create' %}Create Employee{% else %}Edit Employee{% endif %}{% endblock %}
+
+{% block sidebar %}
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <i class="bi bi-clipboard2-check me-2"></i>
+        <span>Task Tracker</span>
+    </div>
+    <nav class="sidebar-nav">
+        <a href="/admin/dashboard" class="sidebar-link">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="/admin/employees" class="sidebar-link active">
+            <i class="bi bi-people"></i>
+            <span>Employees</span>
+        </a>
+        <div class="sidebar-divider"></div>
+        <a href="/logout" class="sidebar-link text-danger">
+            <i class="bi bi-box-arrow-left"></i>
+            <span>Logout</span>
+        </a>
+    </nav>
+</aside>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="/admin/employees" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Employees
+    </a>
+</div>
+
+<div class="content-card" style="max-width: 700px;">
+    <div class="content-card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-{% if mode == 'create' %}person-plus{% else %}pencil-square{% endif %} me-2"></i>
+            {% if mode == 'create' %}New Employee{% else %}Edit Employee{% endif %}
+        </h5>
+    </div>
+    <div class="content-card-body">
+        {% if error %}
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{% if mode == 'create' %}/admin/employees/new{% else %}/admin/employees/{{ employee._id }}/edit{% endif %}">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="employee_code" class="form-label fw-medium">Employee Code <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="employee_code" name="employee_code"
+                           value="{{ employee.employee_code if employee else '' }}" required
+                           placeholder="e.g., EMP001">
+                </div>
+                <div class="col-md-6">
+                    <label for="name" class="form-label fw-medium">Full Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="name" name="name"
+                           value="{{ employee.name if employee else '' }}" required
+                           placeholder="e.g., Rahul Sharma">
+                </div>
+                <div class="col-md-6">
+                    <label for="email" class="form-label fw-medium">Email <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" id="email" name="email"
+                           value="{{ employee.email if employee else '' }}" required
+                           placeholder="e.g., rahul@example.com">
+                </div>
+                <div class="col-md-6">
+                    <label for="role" class="form-label fw-medium">Role</label>
+                    <select class="form-select" id="role" name="role">
+                        <option value="employee" {% if employee and employee.role == 'employee' %}selected{% endif %}>Employee</option>
+                        <option value="admin" {% if employee and employee.role == 'admin' %}selected{% endif %}>Admin</option>
+                    </select>
+                </div>
+
+                {% if mode == 'create' %}
+                <div class="col-md-6">
+                    <label for="username" class="form-label fw-medium">Username <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="username" name="username" required
+                           placeholder="e.g., rahul">
+                </div>
+                <div class="col-md-6">
+                    <label for="password" class="form-label fw-medium">Password <span class="text-danger">*</span></label>
+                    <input type="password" class="form-control" id="password" name="password" required minlength="4"
+                           placeholder="Minimum 4 characters">
+                </div>
+                {% endif %}
+
+                <div class="col-12 mt-4">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-{% if mode == 'create' %}plus-lg{% else %}check-lg{% endif %} me-1"></i>
+                        {% if mode == 'create' %}Create Employee{% else %}Update Employee{% endif %}
+                    </button>
+                    <a href="/admin/employees" class="btn btn-outline-secondary ms-2">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

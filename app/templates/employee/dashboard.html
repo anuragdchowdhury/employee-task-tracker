@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Dashboard – Task Tracker{% endblock %}
+{% block page_title %}My Dashboard{% endblock %}
+
+{% block sidebar %}
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <i class="bi bi-clipboard2-check me-2"></i>
+        <span>Task Tracker</span>
+    </div>
+    <nav class="sidebar-nav">
+        <a href="/employee/dashboard" class="sidebar-link active">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+        </a>
+        <div class="sidebar-divider"></div>
+        <a href="/logout" class="sidebar-link text-danger">
+            <i class="bi bi-box-arrow-left"></i>
+            <span>Logout</span>
+        </a>
+    </nav>
+</aside>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome Section -->
+<div class="welcome-banner mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h2 class="fw-bold mb-1">Welcome, {{ user.name }}! 👋</h2>
+            <p class="text-muted mb-0">Track your weekly tasks and submissions</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">
+                <i class="bi bi-person-badge me-1"></i>{{ user.employee_code }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Week Info Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary-subtle text-primary">
+                <i class="bi bi-calendar-week"></i>
+            </div>
+            <div>
+                <div class="stat-label">Week Start</div>
+                <div class="stat-value">{{ week_start }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon bg-info-subtle text-info">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+            <div>
+                <div class="stat-label">Week End</div>
+                <div class="stat-value">{{ week_end }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            {% if submission %}
+            <div class="stat-icon bg-success-subtle text-success">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div>
+                <div class="stat-label">Status</div>
+                <div class="stat-value text-success">Submitted ✓</div>
+            </div>
+            {% else %}
+            <div class="stat-icon bg-warning-subtle text-warning">
+                <i class="bi bi-clock"></i>
+            </div>
+            <div>
+                <div class="stat-label">Status</div>
+                <div class="stat-value text-warning">Pending</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if success %}
+<div class="alert alert-success d-flex align-items-center" role="alert">
+    <i class="bi bi-check-circle-fill me-2"></i>
+    Your tasks have been submitted successfully for this week!
+</div>
+{% endif %}
+
+{% if submission %}
+<!-- Already Submitted View -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>Your Submitted Tasks</h5>
+        <span class="badge bg-success-subtle text-success">Submitted</span>
+    </div>
+    <div class="content-card-body">
+        <div class="alert alert-info d-flex align-items-center mb-4">
+            <i class="bi bi-info-circle me-2"></i>
+            You have already submitted your tasks for this week. Editing is not allowed.
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th width="50">#</th>
+                        <th>Task Name</th>
+                        <th>Description</th>
+                        <th width="150">Completion Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in formatted_tasks %}
+                    <tr>
+                        <td><span class="badge bg-primary rounded-pill">{{ loop.index }}</span></td>
+                        <td class="fw-medium">{{ task.task_name }}</td>
+                        <td class="text-muted">{{ task.task_description or 'N/A' }}</td>
+                        <td>
+                            <span class="badge bg-light text-dark">
+                                <i class="bi bi-calendar3 me-1"></i>{{ task.completion_date_fmt }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Task Submission Form -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Submit Weekly Tasks</h5>
+    </div>
+    <div class="content-card-body">
+        <form method="POST" action="/employee/submit-tasks" id="taskForm">
+            <div id="taskContainer">
+                <!-- Task Row Template -->
+                <div class="task-row" data-index="0">
+                    <div class="task-row-header d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-primary rounded-pill">Task 1</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-task-btn" style="display:none;">
+                            <i class="bi bi-trash"></i> Remove
+                        </button>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-medium">Task Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="task_name_0" placeholder="e.g., API Development" required>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label small fw-medium">Description</label>
+                            <input type="text" class="form-control" name="task_description_0" placeholder="Brief description of the task">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-medium">Completion Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="completion_date_0" required>
+                        </div>
+                    </div>
+                    <hr class="task-divider">
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-4">
+                <button type="button" class="btn btn-outline-primary" id="addTaskBtn">
+                    <i class="bi bi-plus-lg me-1"></i>Add Task
+                </button>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg px-5" id="submitTasksBtn">
+                <i class="bi bi-send me-2"></i>Submit Weekly Tasks
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let taskIndex = 1;
+
+    document.getElementById('addTaskBtn')?.addEventListener('click', function () {
+        const container = document.getElementById('taskContainer');
+        const html = `
+            <div class="task-row" data-index="${taskIndex}">
+                <div class="task-row-header d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge bg-primary rounded-pill">Task ${taskIndex + 1}</span>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-task-btn" onclick="removeTask(this)">
+                        <i class="bi bi-trash"></i> Remove
+                    </button>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-medium">Task Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="task_name_${taskIndex}" placeholder="e.g., API Development" required>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label small fw-medium">Description</label>
+                        <input type="text" class="form-control" name="task_description_${taskIndex}" placeholder="Brief description of the task">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-medium">Completion Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="completion_date_${taskIndex}" required>
+                    </div>
+                </div>
+                <hr class="task-divider">
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+        taskIndex++;
+        updateRemoveButtons();
+    });
+
+    function removeTask(btn) {
+        btn.closest('.task-row').remove();
+        updateRemoveButtons();
+        updateTaskNumbers();
+    }
+
+    function updateRemoveButtons() {
+        const rows = document.querySelectorAll('.task-row');
+        rows.forEach(row => {
+            const btn = row.querySelector('.remove-task-btn');
+            if (btn) {
+                btn.style.display = rows.length > 1 ? 'inline-flex' : 'none';
+            }
+        });
+    }
+
+    function updateTaskNumbers() {
+        const badges = document.querySelectorAll('.task-row .badge.bg-primary');
+        badges.forEach((badge, i) => {
+            badge.textContent = `Task ${i + 1}`;
+        });
+    }
+
+    // Form validation
+    document.getElementById('taskForm')?.addEventListener('submit', function (e) {
+        const taskNames = document.querySelectorAll('[name^="task_name_"]');
+        let valid = false;
+        taskNames.forEach(input => {
+            if (input.value.trim()) valid = true;
+        });
+        if (!valid) {
+            e.preventDefault();
+            alert('Please add at least one task.');
+        }
+    });
+</script>
+{% endblock %}

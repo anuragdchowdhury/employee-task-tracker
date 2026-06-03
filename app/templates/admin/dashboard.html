@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard – Task Tracker{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+
+{% block sidebar %}
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <i class="bi bi-clipboard2-check me-2"></i>
+        <span>Task Tracker</span>
+    </div>
+    <nav class="sidebar-nav">
+        <a href="/admin/dashboard" class="sidebar-link active">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="/admin/employees" class="sidebar-link">
+            <i class="bi bi-people"></i>
+            <span>Employees</span>
+        </a>
+        <div class="sidebar-divider"></div>
+        <a href="/logout" class="sidebar-link text-danger">
+            <i class="bi bi-box-arrow-left"></i>
+            <span>Logout</span>
+        </a>
+    </nav>
+</aside>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome Section -->
+<div class="welcome-banner mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h2 class="fw-bold mb-1">Admin Dashboard 📊</h2>
+            <p class="text-muted mb-0">Weekly overview: {{ dashboard.week_start }} – {{ dashboard.week_end }}</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <button class="btn btn-success" id="generateReportBtn" onclick="generateWhatsAppReport()">
+                <i class="bi bi-whatsapp me-1"></i>Generate WhatsApp Report
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card stat-card-gradient-primary">
+            <div class="stat-icon bg-white bg-opacity-25 text-white">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div>
+                <div class="stat-label text-white-50">Total Employees</div>
+                <div class="stat-value text-white">{{ dashboard.total }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card stat-card-gradient-success">
+            <div class="stat-icon bg-white bg-opacity-25 text-white">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div>
+                <div class="stat-label text-white-50">Updated This Week</div>
+                <div class="stat-value text-white">{{ dashboard.updated }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card stat-card-gradient-warning">
+            <div class="stat-icon bg-white bg-opacity-25 text-white">
+                <i class="bi bi-clock-fill"></i>
+            </div>
+            <div>
+                <div class="stat-label text-white-50">Pending This Week</div>
+                <div class="stat-value text-white">{{ dashboard.pending }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Employee Status Table -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h5 class="mb-0"><i class="bi bi-table me-2"></i>Employee Submission Status</h5>
+        <div class="search-box">
+            <i class="bi bi-search"></i>
+            <input type="text" class="form-control form-control-sm" id="searchEmployee"
+                   placeholder="Search employees...">
+        </div>
+    </div>
+    <div class="content-card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="employeeTable">
+                <thead>
+                    <tr>
+                        <th>Employee Name</th>
+                        <th>Username</th>
+                        <th>Status</th>
+                        <th>Submission Date</th>
+                        <th width="120">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in dashboard.employee_statuses %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="user-avatar-sm">{{ item.employee.name[0] | upper }}</div>
+                                <div>
+                                    <div class="fw-medium">{{ item.employee.name }}</div>
+                                    <small class="text-muted">{{ item.employee.employee_code }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-muted">{{ item.employee.username }}</td>
+                        <td>
+                            {% if item.submitted %}
+                            <span class="badge bg-success-subtle text-success rounded-pill px-3">
+                                <i class="bi bi-check-circle me-1"></i>Submitted
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning-subtle text-warning rounded-pill px-3">
+                                <i class="bi bi-clock me-1"></i>Pending
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted">
+                            {{ item.submission_date or '—' }}
+                        </td>
+                        <td>
+                            {% if item.submitted %}
+                            <a href="/admin/submissions/{{ item.submission_id }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- WhatsApp Report Modal -->
+<div class="modal fade" id="whatsappModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-whatsapp text-success me-2"></i>WhatsApp Summary Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <pre id="reportContent" class="report-preview"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="copyReport()">
+                    <i class="bi bi-clipboard me-1"></i>Copy to Clipboard
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Search functionality
+    document.getElementById('searchEmployee').addEventListener('input', function () {
+        const query = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#employeeTable tbody tr');
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    });
+
+    // WhatsApp Report
+    async function generateWhatsAppReport() {
+        const btn = document.getElementById('generateReportBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Generating...';
+
+        try {
+            const resp = await fetch('/admin/whatsapp-report');
+            const data = await resp.json();
+            document.getElementById('reportContent').textContent = data.report;
+            const modal = new bootstrap.Modal(document.getElementById('whatsappModal'));
+            modal.show();
+        } catch (err) {
+            showToast('Failed to generate report', 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-whatsapp me-1"></i>Generate WhatsApp Report';
+        }
+    }
+
+    function copyReport() {
+        const text = document.getElementById('reportContent').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Copied Successfully', 'success');
+        }).catch(() => {
+            showToast('Failed to copy', 'danger');
+        });
+    }
+</script>
+{% endblock %}

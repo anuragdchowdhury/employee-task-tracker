@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Employee Weekly Task Tracker – Submit and manage weekly tasks efficiently.">
+    <title>{% block title %}Employee Weekly Task Tracker{% endblock %}</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    {% block body %}
+    <div class="app-wrapper d-flex">
+        <!-- Sidebar -->
+        {% block sidebar %}{% endblock %}
+
+        <!-- Main Content -->
+        <div class="main-content flex-grow-1">
+            <!-- Top Navbar -->
+            <nav class="top-navbar d-flex align-items-center justify-content-between px-4">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-link text-dark d-lg-none sidebar-toggle p-0" id="sidebarToggle">
+                        <i class="bi bi-list fs-4"></i>
+                    </button>
+                    <h5 class="mb-0 page-title">{% block page_title %}Dashboard{% endblock %}</h5>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    {% if user %}
+                    <div class="user-badge d-flex align-items-center gap-2">
+                        <div class="user-avatar">
+                            {{ user.name[0] | upper }}
+                        </div>
+                        <div class="d-none d-md-block">
+                            <div class="fw-semibold small">{{ user.name }}</div>
+                            <div class="text-muted" style="font-size: 0.7rem;">{{ user.role | title }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </nav>
+
+            <!-- Page Content -->
+            <div class="page-content p-4">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Overlay (Mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    {% endblock %}
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JS -->
+    <script src="/static/js/app.js"></script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
