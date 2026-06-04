@@ -32,12 +32,13 @@ def create_default_admin():
             username="admin",
             password_hash=hash_password("admin123"),
             role="admin",
+            team="Management",
         )
         db.employees.insert_one(doc)
         print("✅ Default admin account created — username: admin / password: admin123")
 
 
-def create_employee(employee_code, name, email, username, password, role="employee"):
+def create_employee(employee_code, name, email, username, password, role="employee", team=""):
     """Create a new employee account."""
     db = get_db()
     doc = create_employee_doc(
@@ -47,6 +48,7 @@ def create_employee(employee_code, name, email, username, password, role="employ
         username=username,
         password_hash=hash_password(password),
         role=role,
+        team=team,
     )
     return db.employees.insert_one(doc)
 
@@ -87,3 +89,10 @@ def get_employee_by_id(employee_id: str):
     """Return a single employee by ID."""
     db = get_db()
     return db.employees.find_one({"_id": ObjectId(employee_id)})
+
+
+def get_all_teams():
+    """Return a list of all unique teams."""
+    db = get_db()
+    teams = list(db.teams.find().sort("name", 1))
+    return [t["name"] for t in teams if t.get("name")]

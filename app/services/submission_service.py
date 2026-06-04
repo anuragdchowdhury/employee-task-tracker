@@ -39,13 +39,17 @@ def submit_tasks(employee_id: ObjectId, employee_name: str, tasks: list[dict]) -
     return True
 
 
-def get_weekly_dashboard_data():
+def get_weekly_dashboard_data(team=None):
     """Return dashboard statistics and employee submission statuses."""
     db = get_db()
     week_start, week_end = get_current_week()
     ws_dt = datetime.combine(week_start, datetime.min.time())
 
-    employees = list(db.employees.find({"role": "employee"}).sort("name", 1))
+    query = {"role": "employee"}
+    if team and team != "All":
+        query["team"] = team
+
+    employees = list(db.employees.find(query).sort("name", 1))
     submissions = list(db.weekly_submissions.find({"week_start": ws_dt}))
 
     submitted_ids = {str(s["employee_id"]) for s in submissions}
@@ -73,6 +77,7 @@ def get_weekly_dashboard_data():
         "week_start": format_date(week_start),
         "week_end": format_date(week_end),
         "employee_statuses": employee_statuses,
+        "team_filter": team,
     }
 
 

@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Reports – Task Tracker{% endblock %}
+{% block page_title %}Reports & Export{% endblock %}
+
+{% block sidebar %}
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <i class="bi bi-clipboard2-check me-2"></i>
+        <span>Task Tracker</span>
+    </div>
+    <nav class="sidebar-nav">
+        <a href="/admin/dashboard" class="sidebar-link">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="/admin/employees" class="sidebar-link">
+            <i class="bi bi-people"></i>
+            <span>Employees</span>
+        </a>
+        <a href="/admin/teams" class="sidebar-link">
+            <i class="bi bi-diagram-3"></i>
+            <span>Teams</span>
+        </a>
+        <a href="/admin/reports" class="sidebar-link active">
+            <i class="bi bi-file-earmark-bar-graph"></i>
+            <span>Reports</span>
+        </a>
+        <div class="sidebar-divider"></div>
+        <a href="/logout" class="sidebar-link text-danger">
+            <i class="bi bi-box-arrow-left"></i>
+            <span>Logout</span>
+        </a>
+    </nav>
+</aside>
+{% endblock %}
+
+{% block content %}
+<div class="welcome-banner mb-4">
+    <div class="row align-items-center">
+        <div class="col-12">
+            <h4 class="fw-bold mb-1">Generate Reports 📑</h4>
+            <p class="text-muted mb-0">View or export task submissions across the organization</p>
+        </div>
+    </div>
+</div>
+
+<div class="content-card mb-4">
+    <div class="content-card-body">
+        <form method="GET" action="/admin/reports" id="reportForm">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="start_date" class="form-label small fw-medium">Start Date <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="end_date" class="form-label small fw-medium">End Date <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}" required>
+                </div>
+                <div class="col-md-2">
+                    <label for="team" class="form-label small fw-medium">Team</label>
+                    <select class="form-select" id="team" name="team" onchange="this.form.submit()">
+                        <option value="All" {% if selected_team == 'All' %}selected{% endif %}>All Teams</option>
+                        {% for t in teams %}
+                        <option value="{{ t }}" {% if selected_team == t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="employee_id" class="form-label small fw-medium">Employee</label>
+                    <select class="form-select" id="employee_id" name="employee_id">
+                        <option value="All" {% if selected_employee == 'All' %}selected{% endif %}>All Employees</option>
+                        {% for emp in employees %}
+                        <option value="{{ emp._id }}" {% if selected_employee == emp._id|string %}selected{% endif %}>{{ emp.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-table me-1"></i>View
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if report_data is not none %}
+<div class="content-card">
+    <div class="content-card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-list-columns-reverse me-2"></i>Report Preview</h5>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="exportReport('csv')">
+                <i class="bi bi-filetype-csv me-1"></i>CSV
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="exportReport('xlsx')">
+                <i class="bi bi-filetype-xlsx me-1"></i>Excel
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="exportReport('pdf')">
+                <i class="bi bi-filetype-pdf me-1"></i>PDF
+            </button>
+        </div>
+    </div>
+    <div class="content-card-body">
+        {% if report_data %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle table-sm">
+                <thead>
+                    <tr>
+                        {% for header in report_data[0].keys() %}
+                        <th>{{ header }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in report_data %}
+                    <tr>
+                        {% for value in row.values() %}
+                        <td>{{ value }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-inbox display-4"></i>
+            <p class="mt-2">No tasks found for the selected criteria.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function exportReport(format) {
+        const form = document.getElementById('reportForm');
+        
+        // Build query string from form
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+        
+        for (const [key, value] of formData.entries()) {
+            params.append(key, value);
+        }
+        params.append('format', format);
+        
+        // Open download link
+        window.location.href = `/admin/reports/export?${params.toString()}`;
+    }
+</script>
+{% endblock %}

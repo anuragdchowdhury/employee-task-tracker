@@ -11,6 +11,7 @@ def create_employee_doc(
     username: str,
     password_hash: str,
     role: str = "employee",
+    team: str = "",
     active: bool = True,
 ) -> dict:
     """Return a dictionary ready to insert into the employees collection."""
@@ -21,6 +22,7 @@ def create_employee_doc(
         "username": username.strip().lower(),
         "password_hash": password_hash,
         "role": role,
+        "team": team.strip() if team else "",
         "active": active,
         "created_at": now_ist(),
     }

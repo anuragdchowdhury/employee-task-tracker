@@ -1,11 +1,13 @@
 """Admin routes – dashboard, employee management, reports."""
 
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Request, Form
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 
 from app.utils.security import decode_session_token, SESSION_COOKIE
 from app.utils.timezone import format_date, format_datetime
+from app.database.mongodb import get_db
 from app.services.auth_service import (
     get_user_by_id,
     get_all_employees,
@@ -14,6 +16,7 @@ from app.services.auth_service import (
     update_employee,
     toggle_employee_status,
     reset_employee_password,
+    get_all_teams,
 )
 from app.services.submission_service import (
     get_weekly_dashboard_data,
@@ -21,6 +24,12 @@ from app.services.submission_service import (
     get_submission_by_id,
     generate_whatsapp_report,
     revert_submission,
+)
+from app.services.report_service import (
+    get_report_data,
+    generate_csv,
+    generate_excel,
+    generate_pdf,
 )
 
 router = APIRouter(prefix="/admin")
@@ -42,33 +51,44 @@ def get_admin_user(request: Request):
 
 
 @router.get("/dashboard")
-async def admin_dashboard(request: Request):
+async def admin_dashboard(request: Request, team: str = "All"):
     """Render the admin dashboard with weekly stats."""
     user = get_admin_user(request)
     if not user:
         return RedirectResponse(url="/login", status_code=303)
 
-    dashboard = get_weekly_dashboard_data()
+    dashboard = get_weekly_dashboard_data(team)
+    teams = get_all_teams()
 
     return templates.TemplateResponse("admin/dashboard.html", {
         "request": request,
         "user": user,
         "dashboard": dashboard,
+        "teams": teams,
+        "selected_team": team,
     })
 
 
 @router.get("/employees")
-async def employees_page(request: Request):
-    """Render the employee management page."""
+async def list_employees(request: Request, team: str = "All"):
+    """Render the employee list view with optional team filter."""
     user = get_admin_user(request)
     if not user:
         return RedirectResponse(url="/login", status_code=303)
 
-    employees = get_all_employees()
+    db = get_db()
+    query = {}
+    if team != "All":
+        query["team"] = team
+
+    employees = list(db.employees.find(query).sort("name", 1))
+    
     return templates.TemplateResponse("admin/employees.html", {
         "request": request,
         "user": user,
         "employees": employees,
+        "teams": get_all_teams(),
+        "selected_team": team,
         "success": request.query_params.get("success"),
         "error": request.query_params.get("error"),
     })
@@ -85,6 +105,7 @@ async def new_employee_form(request: Request):
         "request": request,
         "user": user,
         "employee": None,
+        "teams": get_all_teams(),
         "mode": "create",
         "error": None,
     })
@@ -99,6 +120,7 @@ async def create_new_employee(
     username: str = Form(...),
     password: str = Form(...),
     role: str = Form("employee"),
+    team: str = Form(""),
 ):
     """Process new employee creation."""
     user = get_admin_user(request)
@@ -106,7 +128,7 @@ async def create_new_employee(
         return RedirectResponse(url="/login", status_code=303)
 
     try:
-        create_employee(employee_code, name, email, username, password, role)
+        create_employee(employee_code, name, email, username, password, role, team)
         return RedirectResponse(url="/admin/employees?success=created", status_code=303)
     except Exception as e:
         error_msg = str(e)
@@ -116,6 +138,7 @@ async def create_new_employee(
             "request": request,
             "user": user,
             "employee": None,
+            "teams": get_all_teams(),
             "mode": "create",
             "error": error_msg,
         })
@@ -136,6 +159,7 @@ async def edit_employee_form(request: Request, employee_id: str):
         "request": request,
         "user": user,
         "employee": emp,
+        "teams": get_all_teams(),
         "mode": "edit",
         "error": None,
     })
@@ -149,6 +173,7 @@ async def update_employee_details(
     name: str = Form(...),
     email: str = Form(...),
     role: str = Form("employee"),
+    team: str = Form(""),
 ):
     """Process employee update."""
     user = get_admin_user(request)
@@ -161,6 +186,7 @@ async def update_employee_details(
             "name": name.strip(),
             "email": email.strip().lower(),
             "role": role,
+            "team": team.strip(),
         })
         return RedirectResponse(url="/admin/employees?success=updated", status_code=303)
     except Exception as e:
@@ -169,6 +195,7 @@ async def update_employee_details(
             "request": request,
             "user": user,
             "employee": emp,
+            "teams": get_all_teams(),
             "mode": "edit",
             "error": str(e),
         })
@@ -279,3 +306,163 @@ async def whatsapp_report(request: Request):
 
     report = generate_whatsapp_report()
     return JSONResponse({"report": report})
+
+
+@router.get("/reports")
+async def admin_reports(request: Request):
+    """Render the reports page and optional data preview."""
+    user = get_admin_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+
+    # Date parsing
+    start_str = request.query_params.get("start_date", "")
+    end_str = request.query_params.get("end_date", "")
+    team = request.query_params.get("team", "All")
+    employee_id = request.query_params.get("employee_id", "All")
+
+    start_date = None
+    end_date = None
+    if start_str:
+        try:
+            start_date = datetime.strptime(start_str, "%Y-%m-%d").date()
+        except ValueError:
+            pass
+    if end_str:
+        try:
+            end_date = datetime.strptime(end_str, "%Y-%m-%d").date()
+        except ValueError:
+            pass
+
+    # Defaults
+    if not start_date:
+        start_date = (datetime.now() - timedelta(days=30)).date()
+    if not end_date:
+        end_date = datetime.now().date()
+
+    # Load filters
+    teams = get_all_teams()
+    
+    # Load employees for the dropdown (filter by team if selected)
+    db = get_db()
+    emp_query = {"role": "employee"}
+    if team != "All":
+        emp_query["team"] = team
+    employees = list(db.employees.find(emp_query).sort("name", 1))
+
+    report_data = None
+    if start_str and end_str:
+        # User requested a preview
+        report_data = get_report_data(start_date, end_date, team, employee_id)
+
+    return templates.TemplateResponse("admin/reports.html", {
+        "request": request,
+        "user": user,
+        "start_date": start_date.strftime("%Y-%m-%d"),
+        "end_date": end_date.strftime("%Y-%m-%d"),
+        "teams": teams,
+        "selected_team": team,
+        "employees": employees,
+        "selected_employee": employee_id,
+        "report_data": report_data,
+    })
+
+
+@router.get("/reports/export")
+async def export_report(
+    request: Request,
+    start_date: str,
+    end_date: str,
+    format: str,
+    team: str = "All",
+    employee_id: str = "All",
+):
+    """Export the report in the requested format."""
+    user = get_admin_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+
+    try:
+        sd = datetime.strptime(start_date, "%Y-%m-%d").date()
+        ed = datetime.strptime(end_date, "%Y-%m-%d").date()
+    except ValueError:
+        return RedirectResponse(url="/admin/reports?error=invalid_dates", status_code=303)
+
+    data = get_report_data(sd, ed, team, employee_id)
+    filename_base = f"task_report_{start_date}_to_{end_date}"
+
+    if format == "csv":
+        buffer = generate_csv(data)
+        return StreamingResponse(
+            iter([buffer.getvalue()]),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename_base}.csv"}
+        )
+    elif format == "xlsx":
+        buffer = generate_excel(data)
+        return StreamingResponse(
+            iter([buffer.getvalue()]),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={filename_base}.xlsx"}
+        )
+    elif format == "pdf":
+        buffer = generate_pdf(data, title=f"Task Report ({start_date} to {end_date})")
+        return StreamingResponse(
+            iter([buffer.getvalue()]),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename_base}.pdf"}
+        )
+    
+    return RedirectResponse(url="/admin/reports?error=invalid_format", status_code=303)
+
+
+@router.get("/teams")
+async def manage_teams(request: Request):
+    """Render the team management page."""
+    user = get_admin_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+
+    db = get_db()
+    teams = list(db.teams.find().sort("name", 1))
+
+    return templates.TemplateResponse("admin/teams.html", {
+        "request": request,
+        "user": user,
+        "teams": teams,
+        "success": request.query_params.get("success"),
+        "error": request.query_params.get("error"),
+    })
+
+
+@router.post("/teams/create")
+async def create_team(request: Request, name: str = Form(...)):
+    """Create a new team."""
+    user = get_admin_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+
+    db = get_db()
+    name = name.strip()
+    if not name:
+        return RedirectResponse(url="/admin/teams?error=invalid_name", status_code=303)
+
+    if db.teams.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}}):
+        return RedirectResponse(url="/admin/teams?error=duplicate", status_code=303)
+
+    db.teams.insert_one({"name": name})
+    return RedirectResponse(url="/admin/teams?success=created", status_code=303)
+
+
+@router.post("/teams/{team_id}/delete")
+async def delete_team(request: Request, team_id: str):
+    """Delete a team."""
+    user = get_admin_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+
+    from bson import ObjectId
+    db = get_db()
+    db.teams.delete_one({"_id": ObjectId(team_id)})
+    return RedirectResponse(url="/admin/teams?success=deleted", status_code=303)
+

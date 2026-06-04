@@ -18,6 +18,14 @@
             <i class="bi bi-people"></i>
             <span>Employees</span>
         </a>
+        <a href="/admin/teams" class="sidebar-link">
+            <i class="bi bi-diagram-3"></i>
+            <span>Teams</span>
+        </a>
+        <a href="/admin/reports" class="sidebar-link">
+            <i class="bi bi-file-earmark-bar-graph"></i>
+            <span>Reports</span>
+        </a>
         <div class="sidebar-divider"></div>
         <a href="/logout" class="sidebar-link text-danger">
             <i class="bi bi-box-arrow-left"></i>
@@ -35,9 +43,18 @@
             <h2 class="fw-bold mb-1">Admin Dashboard 📊</h2>
             <p class="text-muted mb-0">Weekly overview: {{ dashboard.week_start }} – {{ dashboard.week_end }}</p>
         </div>
-        <div class="col-md-4 text-md-end">
+        <div class="col-md-5 text-md-end d-flex align-items-center justify-content-md-end gap-3">
+            <form method="GET" action="/admin/dashboard" class="d-flex align-items-center m-0">
+                <label for="team" class="me-2 text-muted small fw-medium">Team:</label>
+                <select name="team" id="team" class="form-select form-select-sm" onchange="this.form.submit()" style="width: 150px;">
+                    <option value="All" {% if selected_team == 'All' %}selected{% endif %}>All Teams</option>
+                    {% for t in teams %}
+                    <option value="{{ t }}" {% if selected_team == t %}selected{% endif %}>{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </form>
             <button class="btn btn-success" id="generateReportBtn" onclick="generateWhatsAppReport()">
-                <i class="bi bi-whatsapp me-1"></i>Generate WhatsApp Report
+                <i class="bi bi-whatsapp me-1"></i>WhatsApp Report
             </button>
         </div>
     </div>

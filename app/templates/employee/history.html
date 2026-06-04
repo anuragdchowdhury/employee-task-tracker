@@ -50,6 +50,17 @@
             <i class="bi bi-funnel me-1"></i>Filter
         </button>
         <a href="/employee/history" class="btn btn-outline-secondary ms-2">Reset</a>
+        
+        <div class="dropdown d-inline-block ms-2">
+            <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-download me-1"></i>Export
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" onclick="exportReport('csv')"><i class="bi bi-filetype-csv me-2"></i>CSV</a></li>
+                <li><a class="dropdown-item" href="#" onclick="exportReport('xlsx')"><i class="bi bi-filetype-xlsx me-2"></i>Excel</a></li>
+                <li><a class="dropdown-item" href="#" onclick="exportReport('pdf')"><i class="bi bi-filetype-pdf me-2"></i>PDF</a></li>
+            </ul>
+        </div>
     </div>
 </form>
 
@@ -125,4 +136,15 @@
     <p class="mt-3 mb-0 fs-5">No task submissions found in this date range.</p>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function exportReport(format) {
+        const startDate = document.getElementById('start_date').value;
+        const endDate = document.getElementById('end_date').value;
+        const url = `/employee/reports/export?start_date=${startDate}&end_date=${endDate}&format=${format}`;
+        window.location.href = url;
+    }
+</script>
 {% endblock %}

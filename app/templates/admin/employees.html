@@ -18,6 +18,14 @@
             <i class="bi bi-people"></i>
             <span>Employees</span>
         </a>
+        <a href="/admin/teams" class="sidebar-link">
+            <i class="bi bi-diagram-3"></i>
+            <span>Teams</span>
+        </a>
+        <a href="/admin/reports" class="sidebar-link">
+            <i class="bi bi-file-earmark-bar-graph"></i>
+            <span>Reports</span>
+        </a>
         <div class="sidebar-divider"></div>
         <a href="/logout" class="sidebar-link text-danger">
             <i class="bi bi-box-arrow-left"></i>
@@ -34,9 +42,20 @@
         <h4 class="fw-bold mb-1">Employees</h4>
         <p class="text-muted mb-0">Manage employee accounts and access</p>
     </div>
-    <a href="/admin/employees/new" class="btn btn-primary">
-        <i class="bi bi-person-plus me-1"></i>Add Employee
-    </a>
+    <div class="d-flex align-items-center gap-3">
+        <form method="GET" action="/admin/employees" class="d-flex align-items-center m-0">
+            <label for="team" class="me-2 text-muted small fw-medium">Team:</label>
+            <select name="team" id="team" class="form-select form-select-sm" onchange="this.form.submit()" style="width: 150px;">
+                <option value="All" {% if selected_team == 'All' %}selected{% endif %}>All Teams</option>
+                {% for t in teams %}
+                <option value="{{ t }}" {% if selected_team == t %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <a href="/admin/employees/new" class="btn btn-primary">
+            <i class="bi bi-person-plus me-1"></i>Add Employee
+        </a>
+    </div>
 </div>
 
 {% if success %}
@@ -76,6 +95,7 @@
                         <th>Name</th>
                         <th>Username</th>
                         <th>Email</th>
+                        <th>Team</th>
                         <th>Role</th>
                         <th>Status</th>
                         <th width="280">Actions</th>
@@ -88,6 +108,13 @@
                         <td class="fw-medium">{{ emp.name }}</td>
                         <td class="text-muted">{{ emp.username }}</td>
                         <td class="text-muted">{{ emp.email }}</td>
+                        <td>
+                            {% if emp.team %}
+                            <span class="badge bg-secondary-subtle text-secondary rounded-pill">{{ emp.team }}</span>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
                         <td>
                             {% if emp.role == 'admin' %}
                             <span class="badge bg-primary-subtle text-primary rounded-pill">Admin</span>

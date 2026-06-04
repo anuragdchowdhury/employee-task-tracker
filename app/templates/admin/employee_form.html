@@ -18,6 +18,14 @@
             <i class="bi bi-people"></i>
             <span>Employees</span>
         </a>
+        <a href="/admin/teams" class="sidebar-link">
+            <i class="bi bi-diagram-3"></i>
+            <span>Teams</span>
+        </a>
+        <a href="/admin/reports" class="sidebar-link">
+            <i class="bi bi-file-earmark-bar-graph"></i>
+            <span>Reports</span>
+        </a>
         <div class="sidebar-divider"></div>
         <a href="/logout" class="sidebar-link text-danger">
             <i class="bi bi-box-arrow-left"></i>
@@ -74,6 +82,15 @@
                     <select class="form-select" id="role" name="role">
                         <option value="employee" {% if employee and employee.role == 'employee' %}selected{% endif %}>Employee</option>
                         <option value="admin" {% if employee and employee.role == 'admin' %}selected{% endif %}>Admin</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="team" class="form-label fw-medium">Team</label>
+                    <select class="form-select" id="team" name="team">
+                        <option value="">Select Team...</option>
+                        {% for t in teams %}
+                        <option value="{{ t }}" {% if employee and employee.team == t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
                     </select>
                 </div>
 

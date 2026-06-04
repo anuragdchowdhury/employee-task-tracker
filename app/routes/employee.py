@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Request, Form
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from bson import ObjectId
 
@@ -10,6 +10,7 @@ from app.utils.security import decode_session_token, SESSION_COOKIE
 from app.utils.timezone import get_current_week, format_date
 from app.services.auth_service import get_user_by_id
 from app.services.submission_service import get_submission_for_week, submit_tasks, get_employee_history_by_date_range
+from app.services.report_service import get_report_data, generate_csv, generate_excel, generate_pdf
 
 router = APIRouter(prefix="/employee")
 templates = Jinja2Templates(directory="app/templates")
@@ -176,3 +177,50 @@ async def employee_history(request: Request):
         "start_date": start_date.strftime("%Y-%m-%d"),
         "end_date": end_date.strftime("%Y-%m-%d"),
     })
+
+
+@router.get("/reports/export")
+async def export_employee_report(
+    request: Request,
+    start_date: str,
+    end_date: str,
+    format: str,
+):
+    """Export the report for the logged-in employee."""
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+
+    try:
+        sd = datetime.strptime(start_date, "%Y-%m-%d").date()
+        ed = datetime.strptime(end_date, "%Y-%m-%d").date()
+    except ValueError:
+        return RedirectResponse(url="/employee/history?error=invalid_dates", status_code=303)
+
+    # Force employee_id to be the current user
+    data = get_report_data(sd, ed, team="All", employee_id=str(user["_id"]))
+    filename_base = f"my_tasks_{start_date}_to_{end_date}"
+
+    if format == "csv":
+        buffer = generate_csv(data)
+        return StreamingResponse(
+            iter([buffer.getvalue()]),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename_base}.csv"}
+        )
+    elif format == "xlsx":
+        buffer = generate_excel(data)
+        return StreamingResponse(
+            iter([buffer.getvalue()]),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={filename_base}.xlsx"}
+        )
+    elif format == "pdf":
+        buffer = generate_pdf(data, title=f"My Task Report ({start_date} to {end_date})")
+        return StreamingResponse(
+            iter([buffer.getvalue()]),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename_base}.pdf"}
+        )
+    
+    return RedirectResponse(url="/employee/history?error=invalid_format", status_code=303)
