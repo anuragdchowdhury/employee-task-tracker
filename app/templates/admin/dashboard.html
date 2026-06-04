@@ -43,6 +43,24 @@
     </div>
 </div>
 
+{% if request.query_params.get("success") == "reverted" %}
+<div class="alert alert-success d-flex align-items-center mb-4" role="alert">
+    <i class="bi bi-check-circle-fill me-2"></i>
+    Task submission was successfully reverted. The employee can now submit again.
+</div>
+{% endif %}
+{% if request.query_params.get("error") == "not_current_week" %}
+<div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    You can only revert task submissions for the current ongoing week.
+</div>
+{% elif request.query_params.get("error") %}
+<div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    An error occurred. Please try again.
+</div>
+{% endif %}
+
 <!-- Stats Cards -->
 <div class="row g-3 mb-4">
     <div class="col-md-4">
@@ -131,9 +149,17 @@
                         </td>
                         <td>
                             {% if item.submitted %}
-                            <a href="/admin/submissions/{{ item.submission_id }}" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-eye"></i> View
-                            </a>
+                            <div class="d-flex align-items-center gap-2">
+                                <a href="/admin/submissions/{{ item.submission_id }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
+                                <form method="POST" action="/admin/submissions/{{ item.submission_id }}/revert" class="m-0"
+                                      onsubmit="return confirm('Are you sure you want to revert this submission? The employee will need to submit again.');">
+                                    <button type="submit" class="btn btn-sm btn-revert">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Revert
+                                    </button>
+                                </form>
+                            </div>
                             {% else %}
                             <span class="text-muted small">—</span>
                             {% endif %}

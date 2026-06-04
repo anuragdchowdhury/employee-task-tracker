@@ -20,6 +20,7 @@ from app.services.submission_service import (
     get_employee_history,
     get_submission_by_id,
     generate_whatsapp_report,
+    revert_submission,
 )
 
 router = APIRouter(prefix="/admin")
@@ -251,6 +252,22 @@ async def view_task_details(request: Request, submission_id: str):
         "week_end": format_date(sub["week_end"]),
         "submitted_at": format_datetime(sub["submitted_at"]),
     })
+
+
+@router.post("/submissions/{submission_id}/revert")
+async def revert_task_submission(request: Request, submission_id: str):
+    """Revert an employee's submission for the current week."""
+    user = get_admin_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+
+    result = revert_submission(submission_id)
+    if result == "success":
+        return RedirectResponse(url="/admin/dashboard?success=reverted", status_code=303)
+    elif result == "not_current_week":
+        return RedirectResponse(url="/admin/dashboard?error=not_current_week", status_code=303)
+    else:
+        return RedirectResponse(url="/admin/dashboard?error=not_found", status_code=303)
 
 
 @router.get("/whatsapp-report")

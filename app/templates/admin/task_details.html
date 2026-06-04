@@ -45,10 +45,16 @@
                 Week: {{ week_start }} – {{ week_end }}
             </p>
         </div>
-        <div class="col-md-6 text-md-end">
+        <div class="col-md-6 text-md-end d-flex align-items-center justify-content-md-end gap-3">
             <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">
                 <i class="bi bi-calendar-check me-1"></i>Submitted: {{ submitted_at }}
             </span>
+            <form method="POST" action="/admin/submissions/{{ submission._id }}/revert" class="m-0"
+                  onsubmit="return confirm('Are you sure you want to revert this submission? The employee will need to submit again.');">
+                <button type="submit" class="btn btn-sm btn-revert">
+                    <i class="bi bi-arrow-counterclockwise"></i> Revert
+                </button>
+            </form>
         </div>
     </div>
 </div>
@@ -67,6 +73,8 @@
                         <th width="50">#</th>
                         <th>Task Name</th>
                         <th>Description</th>
+                        <th width="120">Type</th>
+                        <th width="150">Start Date</th>
                         <th width="160">Completion Date</th>
                     </tr>
                 </thead>
@@ -77,8 +85,24 @@
                         <td class="fw-medium">{{ task.task_name }}</td>
                         <td class="text-muted">{{ task.task_description or 'N/A' }}</td>
                         <td>
+                            {% if task.task_type == 'Feature' %}
+                            <span class="task-type-badge task-type-feature"><i class="bi bi-star"></i> Feature</span>
+                            {% elif task.task_type == 'Improvement' %}
+                            <span class="task-type-badge task-type-improvement"><i class="bi bi-arrow-up-circle"></i> Improvement</span>
+                            {% elif task.task_type == 'Bug Fix' %}
+                            <span class="task-type-badge task-type-bugfix"><i class="bi bi-bug"></i> Bug Fix</span>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
                             <span class="badge bg-light text-dark">
-                                <i class="bi bi-calendar3 me-1"></i>{{ task.completion_date_fmt }}
+                                <i class="bi bi-calendar3 me-1"></i>{{ task.start_date_fmt }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark">
+                                <i class="bi bi-calendar-check me-1"></i>{{ task.completion_date_fmt }}
                             </span>
                         </td>
                     </tr>

@@ -63,6 +63,7 @@ body {
     inset: 0;
     overflow: hidden;
     z-index: 1;
+    pointer-events: none;
 }
 
 .login-bg-shape {
@@ -626,4 +627,155 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
+}
+
+/* --- History Page --- */
+.history-filter-bar {
+    background: white;
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.history-filter-bar .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.history-filter-bar .form-group label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+}
+
+/* Week Accordion */
+.week-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.week-group {
+    background: white;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    transition: var(--transition-normal);
+}
+
+.week-group:hover {
+    box-shadow: var(--card-shadow-hover);
+}
+
+.week-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    user-select: none;
+    background: #fafbfc;
+    border-bottom: 1px solid transparent;
+    transition: var(--transition-fast);
+    gap: 0.75rem;
+}
+
+.week-group-header:hover {
+    background: #f1f5f9;
+}
+
+.week-group.open .week-group-header {
+    border-bottom-color: var(--border-color);
+}
+
+.week-group-header .week-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #1e293b;
+}
+
+.week-group-header .week-title i {
+    color: #3b82f6;
+    font-size: 1.1rem;
+}
+
+.week-group-header .week-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.week-group-header .chevron-icon {
+    transition: transform 0.3s ease;
+    color: #94a3b8;
+    font-size: 1.1rem;
+}
+
+.week-group.open .week-group-header .chevron-icon {
+    transform: rotate(180deg);
+}
+
+.week-group-body {
+    display: none;
+    padding: 1rem 1.25rem;
+}
+
+.week-group.open .week-group-body {
+    display: block;
+    animation: fadeInUp 0.3s ease-out;
+}
+
+/* Task Type Badges */
+.task-type-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.3rem 0.65rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.task-type-feature {
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+}
+
+.task-type-improvement {
+    background: rgba(139, 92, 246, 0.1);
+    color: #7c3aed;
+}
+
+.task-type-bugfix {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+}
+
+/* Revert Button */
+.btn-revert {
+    background: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    font-size: 0.8rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: var(--transition-fast);
+}
+
+.btn-revert:hover {
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
 }

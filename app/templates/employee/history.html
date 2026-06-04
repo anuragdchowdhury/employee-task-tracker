@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Task History – Task Tracker{% endblock %}
+{% block page_title %}Task History{% endblock %}
+
+{% block sidebar %}
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <i class="bi bi-clipboard2-check me-2"></i>
+        <span>Task Tracker</span>
+    </div>
+    <nav class="sidebar-nav">
+        <a href="/employee/dashboard" class="sidebar-link">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="/employee/history" class="sidebar-link active">
+            <i class="bi bi-clock-history"></i>
+            <span>Task History</span>
+        </a>
+        <div class="sidebar-divider"></div>
+        <a href="/logout" class="sidebar-link text-danger">
+            <i class="bi bi-box-arrow-left"></i>
+            <span>Logout</span>
+        </a>
+    </nav>
+</aside>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Task History 📅</h4>
+        <p class="text-muted mb-0">View past task submissions</p>
+    </div>
+</div>
+
+<!-- Date Range Filter -->
+<form method="GET" action="/employee/history" class="history-filter-bar mb-4">
+    <div class="form-group">
+        <label for="start_date">Start Date</label>
+        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}" required>
+    </div>
+    <div class="form-group">
+        <label for="end_date">End Date</label>
+        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}" required>
+    </div>
+    <div class="form-group ms-auto">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-funnel me-1"></i>Filter
+        </button>
+        <a href="/employee/history" class="btn btn-outline-secondary ms-2">Reset</a>
+    </div>
+</form>
+
+<!-- Weekly Accordion -->
+{% if week_groups %}
+<div class="week-accordion">
+    {% for group in week_groups %}
+    <div class="week-group {% if loop.first %}open{% endif %}">
+        <div class="week-group-header" onclick="this.parentElement.classList.toggle('open')">
+            <div class="week-title">
+                <i class="bi bi-calendar2-week"></i>
+                <span>{{ group.week_start }} – {{ group.week_end }}</span>
+            </div>
+            <div class="week-meta">
+                <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">
+                    {{ group.task_count }} tasks
+                </span>
+                <i class="bi bi-chevron-down chevron-icon"></i>
+            </div>
+        </div>
+        <div class="week-group-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th width="50">#</th>
+                            <th>Task Name</th>
+                            <th>Description</th>
+                            <th width="120">Type</th>
+                            <th width="130">Start Date</th>
+                            <th width="130">Completion Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in group.tasks %}
+                        <tr>
+                            <td><span class="badge bg-light text-dark">{{ loop.index }}</span></td>
+                            <td class="fw-medium">{{ task.task_name }}</td>
+                            <td class="text-muted">{{ task.task_description or 'N/A' }}</td>
+                            <td>
+                                {% if task.task_type == 'Feature' %}
+                                <span class="task-type-badge task-type-feature"><i class="bi bi-star"></i> Feature</span>
+                                {% elif task.task_type == 'Improvement' %}
+                                <span class="task-type-badge task-type-improvement"><i class="bi bi-arrow-up-circle"></i> Improvement</span>
+                                {% elif task.task_type == 'Bug Fix' %}
+                                <span class="task-type-badge task-type-bugfix"><i class="bi bi-bug"></i> Bug Fix</span>
+                                {% else %}
+                                <span class="text-muted small">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark">
+                                    <i class="bi bi-calendar3 me-1"></i>{{ task.start_date_fmt }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark">
+                                    <i class="bi bi-calendar-check me-1"></i>{{ task.completion_date_fmt }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5 text-muted bg-white rounded-4 border">
+    <i class="bi bi-inbox display-4"></i>
+    <p class="mt-3 mb-0 fs-5">No task submissions found in this date range.</p>
+</div>
+{% endif %}
+{% endblock %}

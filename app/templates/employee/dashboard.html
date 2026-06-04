@@ -14,6 +14,10 @@
             <i class="bi bi-speedometer2"></i>
             <span>Dashboard</span>
         </a>
+        <a href="/employee/history" class="sidebar-link">
+            <i class="bi bi-clock-history"></i>
+            <span>Task History</span>
+        </a>
         <div class="sidebar-divider"></div>
         <a href="/logout" class="sidebar-link text-danger">
             <i class="bi bi-box-arrow-left"></i>
@@ -112,6 +116,8 @@
                         <th width="50">#</th>
                         <th>Task Name</th>
                         <th>Description</th>
+                        <th width="120">Type</th>
+                        <th width="150">Start Date</th>
                         <th width="150">Completion Date</th>
                     </tr>
                 </thead>
@@ -122,8 +128,24 @@
                         <td class="fw-medium">{{ task.task_name }}</td>
                         <td class="text-muted">{{ task.task_description or 'N/A' }}</td>
                         <td>
+                            {% if task.task_type == 'Feature' %}
+                            <span class="task-type-badge task-type-feature"><i class="bi bi-star"></i> Feature</span>
+                            {% elif task.task_type == 'Improvement' %}
+                            <span class="task-type-badge task-type-improvement"><i class="bi bi-arrow-up-circle"></i> Improvement</span>
+                            {% elif task.task_type == 'Bug Fix' %}
+                            <span class="task-type-badge task-type-bugfix"><i class="bi bi-bug"></i> Bug Fix</span>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
                             <span class="badge bg-light text-dark">
-                                <i class="bi bi-calendar3 me-1"></i>{{ task.completion_date_fmt }}
+                                <i class="bi bi-calendar3 me-1"></i>{{ task.start_date_fmt }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark">
+                                <i class="bi bi-calendar-check me-1"></i>{{ task.completion_date_fmt }}
                             </span>
                         </td>
                     </tr>
@@ -151,15 +173,28 @@
                         </button>
                     </div>
                     <div class="row g-3 mb-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label small fw-medium">Task Name <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="task_name_0" placeholder="e.g., API Development" required>
                         </div>
-                        <div class="col-md-5">
-                            <label class="form-label small fw-medium">Description</label>
-                            <input type="text" class="form-control" name="task_description_0" placeholder="Brief description of the task">
-                        </div>
                         <div class="col-md-3">
+                            <label class="form-label small fw-medium">Description</label>
+                            <input type="text" class="form-control" name="task_description_0" placeholder="Brief description">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-medium">Type</label>
+                            <select class="form-select" name="task_type_0">
+                                <option value="" selected disabled>Select...</option>
+                                <option value="Feature">Feature</option>
+                                <option value="Improvement">Improvement</option>
+                                <option value="Bug Fix">Bug Fix</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-medium">Start Date</label>
+                            <input type="date" class="form-control" name="start_date_0">
+                        </div>
+                        <div class="col-md-2">
                             <label class="form-label small fw-medium">Completion Date <span class="text-danger">*</span></label>
                             <input type="date" class="form-control" name="completion_date_0" required>
                         </div>
@@ -198,15 +233,28 @@
                     </button>
                 </div>
                 <div class="row g-3 mb-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label small fw-medium">Task Name <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" name="task_name_${taskIndex}" placeholder="e.g., API Development" required>
                     </div>
-                    <div class="col-md-5">
-                        <label class="form-label small fw-medium">Description</label>
-                        <input type="text" class="form-control" name="task_description_${taskIndex}" placeholder="Brief description of the task">
-                    </div>
                     <div class="col-md-3">
+                        <label class="form-label small fw-medium">Description</label>
+                        <input type="text" class="form-control" name="task_description_${taskIndex}" placeholder="Brief description">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-medium">Type</label>
+                        <select class="form-select" name="task_type_${taskIndex}">
+                            <option value="" selected disabled>Select...</option>
+                            <option value="Feature">Feature</option>
+                            <option value="Improvement">Improvement</option>
+                            <option value="Bug Fix">Bug Fix</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-medium">Start Date</label>
+                        <input type="date" class="form-control" name="start_date_${taskIndex}">
+                    </div>
+                    <div class="col-md-2">
                         <label class="form-label small fw-medium">Completion Date <span class="text-danger">*</span></label>
                         <input type="date" class="form-control" name="completion_date_${taskIndex}" required>
                     </div>

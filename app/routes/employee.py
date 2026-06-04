@@ -1,6 +1,6 @@
 """Employee routes – dashboard and task submission."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -9,7 +9,7 @@ from bson import ObjectId
 from app.utils.security import decode_session_token, SESSION_COOKIE
 from app.utils.timezone import get_current_week, format_date
 from app.services.auth_service import get_user_by_id
-from app.services.submission_service import get_submission_for_week, submit_tasks
+from app.services.submission_service import get_submission_for_week, submit_tasks, get_employee_history_by_date_range
 
 router = APIRouter(prefix="/employee")
 templates = Jinja2Templates(directory="app/templates")
@@ -53,6 +53,16 @@ async def employee_dashboard(request: Request):
                 t["completion_date_fmt"] = cd
             else:
                 t["completion_date_fmt"] = "N/A"
+
+            sd = t.get("start_date")
+            if isinstance(sd, datetime):
+                t["start_date_fmt"] = format_date(sd)
+            elif isinstance(sd, str):
+                t["start_date_fmt"] = sd
+            else:
+                t["start_date_fmt"] = "N/A"
+
+            t.setdefault("task_type", "")
             formatted_tasks.append(t)
 
     return templates.TemplateResponse("employee/dashboard.html", {
@@ -85,6 +95,8 @@ async def submit_weekly_tasks(request: Request):
         if task_name is None:
             break
         task_desc = form.get(f"task_description_{idx}", "")
+        task_type = form.get(f"task_type_{idx}", "")
+        start_date_str = form.get(f"start_date_{idx}", "")
         completion = form.get(f"completion_date_{idx}", "")
 
         completion_date = None
@@ -94,10 +106,19 @@ async def submit_weekly_tasks(request: Request):
             except ValueError:
                 pass
 
+        start_date = None
+        if start_date_str:
+            try:
+                start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+            except ValueError:
+                pass
+
         if task_name.strip():
             tasks.append({
                 "task_name": task_name.strip(),
                 "task_description": task_desc.strip(),
+                "task_type": task_type.strip(),
+                "start_date": start_date,
                 "completion_date": completion_date,
             })
         idx += 1
@@ -110,3 +131,48 @@ async def submit_weekly_tasks(request: Request):
         return RedirectResponse(url="/employee/dashboard?success=1", status_code=303)
     else:
         return RedirectResponse(url="/employee/dashboard?error=already_submitted", status_code=303)
+
+
+@router.get("/history")
+async def employee_history(request: Request):
+    """Render the employee task history page with weekly grouping."""
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+    if user["role"] == "admin":
+        return RedirectResponse(url="/admin/dashboard", status_code=303)
+
+    # Parse optional date range from query params
+    start_str = request.query_params.get("start_date", "")
+    end_str = request.query_params.get("end_date", "")
+
+    start_date = None
+    end_date = None
+    if start_str:
+        try:
+            start_date = datetime.strptime(start_str, "%Y-%m-%d").date()
+        except ValueError:
+            pass
+    if end_str:
+        try:
+            end_date = datetime.strptime(end_str, "%Y-%m-%d").date()
+        except ValueError:
+            pass
+
+    # Default: last 30 days
+    if not start_date:
+        start_date = (datetime.now() - timedelta(days=30)).date()
+    if not end_date:
+        end_date = datetime.now().date()
+
+    week_groups = get_employee_history_by_date_range(
+        str(user["_id"]), start_date, end_date
+    )
+
+    return templates.TemplateResponse("employee/history.html", {
+        "request": request,
+        "user": user,
+        "week_groups": week_groups,
+        "start_date": start_date.strftime("%Y-%m-%d"),
+        "end_date": end_date.strftime("%Y-%m-%d"),
+    })
